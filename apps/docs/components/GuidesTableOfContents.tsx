@@ -9,6 +9,7 @@ import useHash from '~/hooks/useHash'
 import { useRerenderOnEvt } from '~/hooks/useManualRerender'
 import { removeAnchor } from './CustomHTMLElements/CustomHTMLElements.utils'
 import { Feedback } from './Feedback'
+import { proxy, useSnapshot } from 'valtio'
 
 const formatSlug = (slug: string) => {
   // [Joshen] We will still provide support for headers declared like this:
@@ -37,6 +38,21 @@ const formatTOCHeader = (content: string) => {
   return res.join('')
 }
 
+const tocRenderSwitch = proxy({
+  renderFlag: 0,
+  toggleRenderFlag: () => void (tocRenderSwitch.renderFlag = (tocRenderSwitch.renderFlag + 1) % 2),
+})
+
+const useSubscribeTocRerender = () => {
+  const { renderFlag } = useSnapshot(tocRenderSwitch)
+  return void renderFlag // Prevent it from being detected as unused code
+}
+
+const useTocRerenderTrigger = () => {
+  const { toggleRenderFlag } = useSnapshot(tocRenderSwitch)
+  return toggleRenderFlag
+}
+
 const GuidesTableOfContents = ({
   className,
   overrideToc,
@@ -46,6 +62,7 @@ const GuidesTableOfContents = ({
   overrideToc?: Array<{ text: string; link: string; level: number }>
   video?: string
 }) => {
+  useSubscribeTocRerender()
   const [tocList, setTocList] = useState([])
   const pathname = usePathname()
   const [hash] = useHash()
@@ -126,3 +143,4 @@ const GuidesTableOfContents = ({
 }
 
 export default GuidesTableOfContents
+export { useTocRerenderTrigger }
